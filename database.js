@@ -57,7 +57,7 @@ const getClientByName = (request, response) => {
     } else {
         response.status(200).json("Faltan parametros");
     }
-    
+
 }
 
 const createClient = (request, response) => {
@@ -110,12 +110,11 @@ const updateClient = (request, response) => {
     let name = request.body.name;
     let phone = request.body.phone;
 
-    console.log(name);
 
     if (id && name && phone) {
         Realm.open(databaseOptions).then(realm => {
             realm.write(() => {
-                let client = realm.objectForPrimaryKey(CLIENT, id)
+                let client = realm.objectForPrimaryKey(CLIENT, Number(id));
                 if (!client) {
                     response.status(200).json("No hay ningun cliente con ese id");
                 } else {
@@ -126,7 +125,7 @@ const updateClient = (request, response) => {
 
             });
         }).catch((error) => {
-            console.log(error);
+            console.log(error + " " +  id);
         })
     } else {
         response.status(200).json("Faltan parametros");
@@ -142,15 +141,26 @@ const deleteClient = (request, response) => {
     }
     let id = request.params.id;
 
-    let q = `DELETE FROM clientes WHERE id=${id}`;
-    pool.query(q, (error, result) => {
-        if (error) {
-            console.log(error);
-        } else {
-            //console.log(result);
-            response.status(200).json(`Usuario ${id} eliminado`);
-        }
-    })
+    if (id) {
+        Realm.open(databaseOptions).then(realm => {
+            let client = realm.objectForPrimaryKey(CLIENT, Number(id));
+            if (!client) {
+                response.status(200).json("No hay ningun cliente");
+            } else {
+                realm.write(() => {
+                    realm.delete(client);
+                    response.status(200).json("Cliente borrado");
+                });
+            }
+
+        }).catch((error) => {
+            console.log(error + " " +  id);
+        });
+    } else {
+        response.status(200).json("Faltan parametros");
+    }
+
+
 }
 
 const watchDog = (apiKey) => {
